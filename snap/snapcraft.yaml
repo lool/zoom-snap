@@ -1,0 +1,86 @@
+name: zoom-lool
+base: core18
+version: 'latest'
+summary: Zoom Video Communications
+description: |
+  Zoom Video Communications
+grade: stable
+confinement: strict
+
+parts:
+  deb:
+    plugin: dump
+    source: https://zoom.us/client/latest/zoom_amd64.deb
+    stage-packages:
+    # from website
+    - libglib2.0-0
+    # adjusted from 0.1 version
+    - libgstreamer-plugins-base1.0-0
+    - libxcb-shape0
+    - libxcb-shm0
+    - libxcb-xfixes0
+    - libxcb-randr0
+    - libxcb-image0
+    - libfontconfig1
+    - libgl1-mesa-glx
+    - libxi6
+    - libsm6
+    - libxrender1
+    - libpulse0
+    - libxcomposite1
+    - libxslt1.1
+    - libsqlite3-0
+    - libxcb-keysyms1
+    - libxcb-xtest0
+    # discovered by running the binary
+    - libx11-6
+    - libxtst6
+    - libnss3
+    - libxcursor1
+    - libxrandr2
+    - libasound2
+    - libegl1
+    - pulseaudio-utils
+    - libgl1-mesa-dri
+    - xkb-data
+    # lscpu, killall5
+    - util-linux
+    override-build: |
+      # fix absolute symlink to be relative
+      ln -sf ../../opt/zoom/ZoomLauncher usr/bin/zoom
+      # fix hardcoded LD_LIBRARY_PATH
+      sed -i s/LD_LIBRARY_PATH/XXXXXXXXXX_PATH/g opt/zoom/zoom.sh opt/zoom/libQt5Network.so.5.9.6 opt/zoom/libQt5WebEngineCore.so.5.9.6 opt/zoom/zopen
+      sed -i s/D_LIBRAR/XXXXXXXX/g opt/zoom/ZoomLauncher
+      snapcraftctl build
+  desktop-qt5:
+    source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
+    source-subdir: qt
+    plugin: make
+    make-parameters: ["FLAVOR=qt5"]
+    build-packages:
+      - build-essential
+      - qtbase5-dev
+      - dpkg-dev
+    stage-packages:
+      - libxkbcommon0
+      - ttf-ubuntu-font-family
+      - dmz-cursor-theme
+      - light-themes
+      - adwaita-icon-theme
+      - gnome-themes-standard
+      - shared-mime-info
+      - libqt5gui5
+      - libgdk-pixbuf2.0-0
+      - libqt5svg5 # for loading icon themes which are svg
+      - try: [appmenu-qt5] # not available on core18
+      - locales-all
+      - xdg-user-dirs
+      - fcitx-frontend-qt5
+
+apps:
+  zoom:
+    command: bin/desktop-launch $SNAP/usr/bin/zoom
+    environment:
+      QT_XKB_CONFIG_ROOT: $SNAP/usr/share/X11/xkb/
+    plugs: [audio-record, camera, desktop, network, network-bind, opengl, pulseaudio, unity7, x11]
+
